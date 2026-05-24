@@ -10,11 +10,11 @@ import supervision as sv
 import pims
 
 from trackers import (
-    Keypoint, 
-    Keypoints, 
-    PlayerTracker, 
+    Keypoint,
+    Keypoints,
+    PlayerTracker,
     PlayerKeypointsTracker,
-    BallTracker, 
+    BallTracker,
     KeypointsTracker,
     TrackingRunner
 )
@@ -22,6 +22,13 @@ from analytics import DataAnalytics
 from visualizations.padel_court import padel_court_2d
 from estimate_velocity import BallVelocityEstimator, ImpactType
 from utils.video import save_video
+from utils.higgsfield_video import (
+    generate_video_from_frame,
+    extract_video_url,
+    is_configured as higgsfield_is_configured,
+    SUPPORTED_MODELS as HIGGSFIELD_MODELS,
+    DEFAULT_PROMPT as HIGGSFIELD_DEFAULT_PROMPT,
+)
 from config import *
 
 COLLECT_DATA = True
@@ -468,15 +475,124 @@ if upload_video or st.session_state["video"] is not None:
 
         # for frame in court_frames(player_choice, velocity_type):
         #     print(type(frame))
-        #    break    
+        #    break
 
         # save_video(
-        #     court_frames(player_choice, velocity_type), 
-        #   "positions.mp4", 
+        #     court_frames(player_choice, velocity_type),
+        #   "positions.mp4",
         #     fps=st.session_state["runner"].video_info.fps,
         #    w=st.session_state["runner"].video_info.width,
         #    h=st.session_state["runner"].video_info.height,
         #)
+
+    # ------------------------------------------------------------------
+    # Higgsfield AI Video Generation
+    # ------------------------------------------------------------------
+    st.divider()
+    st.header("🎬 Generate AI Highlight Video")
+    st.markdown(
+        "Use **Higgsfield AI** to transform a frame from the match into a "
+        "cinematic AI-generated video clip."
+    )
+
+    if not higgsfield_is_configured():
+        st.warning(
+            "⚠️ Higgsfield API credentials not found. "
+            "Set the **HF_KEY** environment variable (or **HF_API_KEY** + **HF_API_SECRET**) "
+            "to enable AI video generation."
+        )
+    else:
+        video_obj = st.session_state.get("video")
+        if video_obj is None:
+            st.info("Upload and analyse a video first to enable AI highlight generation.")
+        else:
+            total_frames = len(video_obj)
+
+            with st.form("higgsfield-generate"):
+                st.subheader("Settings")
+
+                col_frame, col_model = st.columns(2)
+
+                with col_frame:
+                    hf_frame_index = st.slider(
+                        "Starting frame",
+                        min_value=0,
+                        max_value=total_frames - 1,
+                        value=0,
+                        help="This frame will be used as the first frame of the generated video.",
+                    )
+
+                with col_model:
+                    hf_model = st.selectbox(
+                        "Higgsfield model",
+                        options=list(HIGGSFIELD_MODELS.keys()),
+                        format_func=lambda k: HIGGSFIELD_MODELS[k],
+                        index=0,
+                    )
+
+                hf_prompt = st.text_area(
+                    "Prompt",
+                    value=HIGGSFIELD_DEFAULT_PROMPT,
+                    help="Describe the style and motion you want in the generated video.",
+                )
+
+                col_ar, col_dur, col_mode = st.columns(3)
+                with col_ar:
+                    hf_aspect_ratio = st.selectbox(
+                        "Aspect ratio",
+                        options=["16:9", "9:16", "1:1"],
+                        index=0,
+                    )
+                with col_dur:
+                    hf_duration = st.selectbox(
+                        "Duration (s)",
+                        options=[5, 10],
+                        index=0,
+                    )
+                with col_mode:
+                    hf_mode = st.radio(
+                        "Quality",
+                        options=["std", "pro"],
+                        horizontal=True,
+                        help="'pro' produces higher quality but takes longer.",
+                    )
+
+                generate_btn = st.form_submit_button(
+                    "✨ Generate AI Video", use_container_width=True
+                )
+
+            # Preview the chosen frame
+            preview_frame = np.array(video_obj[hf_frame_index])
+            st.image(preview_frame, caption=f"Starting frame #{hf_frame_index}", use_container_width=True)
+
+            if generate_btn:
+                with st.spinner("Uploading frame and generating AI video… this may take 20–60 seconds."):
+                    try:
+                        result = generate_video_from_frame(
+                            frame=preview_frame,
+                            prompt=hf_prompt,
+                            model=hf_model,
+                            aspect_ratio=hf_aspect_ratio,
+                            duration=hf_duration,
+                            mode=hf_mode,
+                        )
+                        video_url = extract_video_url(result)
+
+                        if video_url:
+                            st.success("✅ AI video generated successfully!")
+                            st.video(video_url)
+                            st.markdown(f"📥 [Download video]({video_url})")
+                        else:
+                            st.warning(
+                                "Generation completed but no video URL was returned. "
+                                "Raw response:"
+                            )
+                            st.json(result)
+
+                    except EnvironmentError as exc:
+                        st.error(f"❌ Configuration error: {exc}")
+                    except Exception as exc:
+                        st.error(f"❌ Video generation failed: {exc}")
 
         
 

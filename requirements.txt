@@ -4,8 +4,9 @@ matplotlib
 opencv-python
 pims
 plotly
-seaborn 
+seaborn
 supervision
 ultralytics
 streamlit
 parse
+higgsfield-client

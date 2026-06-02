@@ -272,44 +272,41 @@ def slide_cta():
     draw = bg_cover(img)
     slide_num(draw, TOTAL)
 
-    y = 160
+    y = 130
     max_w = W - PAD * 2
 
-    tf = ImageFont.truetype(F_R, 33)
-    draw.text((PAD, y), "Para receber conteúdo como este", font=tf, fill=DIMGRAY)
-    y += 48
+    # top label
+    lf_sm = ImageFont.truetype(F_SB, 19)
+    draw.text((PAD, y), "QUER IR ALÉM?", font=lf_sm, fill=GOLD)
+    y += 36
+    draw.line([(PAD, y), (PAD + 160, y)], fill=GOLD, width=2)
+    y += 46
 
-    bf = ImageFont.truetype(F_XB, 55)
-    draw.text((PAD, y), "diretamente no", font=bf, fill=WHITE)
-    y += 65
-    draw.text((PAD, y), "seu Instagram:",  font=bf, fill=WHITE)
-    y += 90
+    # main call-to-action headline
+    xl = ImageFont.truetype(F_XB, 72)
+    draw.text((PAD, y), "Siga o",         font=xl, fill=DIMGRAY); y += 84
+    draw.text((PAD, y), "Dr. André",      font=xl, fill=WHITE);   y += 84
+    draw.text((PAD, y), "Montenegro",     font=xl, fill=GOLD);    y += 100
 
-    draw.line([(PAD, y), (PAD + 180, y)], fill=GOLD, width=2)
-    y += 38
+    # separator
+    draw.line([(PAD, y), (PAD + 180, y)], fill=GOLD_DIM, width=1)
+    y += 36
 
     # bullet items
-    items = [
-        ("Siga",            "@dr.andremontenegro"),
-        ("Ative",           "as notificações de posts"),
-        ("Acesse",          "o link na bio para mais conteúdo"),
-    ]
-    lf  = ImageFont.truetype(F_R,  30)
-    lbf = ImageFont.truetype(F_B,  30)
-    dot = ImageFont.truetype(F_XB, 30)
-    for verb, rest in items:
-        draw.text((PAD,      y), "•",    font=dot, fill=GOLD)
-        draw.text((PAD + 28, y), verb,   font=lbf, fill=WHITE)
-        vw = draw.textlength(verb + " ", font=lbf)
-        draw.text((PAD + 28 + vw, y), rest, font=lf, fill=DIMGRAY)
-        y += 52
+    lf  = ImageFont.truetype(F_R,  32)
+    lbf = ImageFont.truetype(F_B,  32)
+    dot = ImageFont.truetype(F_XB, 32)
 
-    # signature
-    y += 20
-    sig_f = ImageFont.truetype(F_L, 26)
-    sig_b = ImageFont.truetype(F_SB, 26)
-    draw.text((PAD, y), "Dr. Andre Montenegro",    font=sig_b, fill=WHITE)
-    draw.text((PAD, y + 32), "Médico | Performance & Emagrecimento", font=sig_f, fill=DIMGRAY)
+    items = [
+        ("@dr.andremontenegro",       "no Instagram"),
+        ("Consulta individualizada", "— link na bio"),
+    ]
+    for bold_part, light_part in items:
+        draw.text((PAD, y), "•", font=dot, fill=GOLD)
+        draw.text((PAD + 30, y), bold_part, font=lbf, fill=WHITE)
+        bw = draw.textlength(bold_part, font=lbf)
+        draw.text((PAD + 30 + bw + 6, y), light_part, font=lf, fill=DIMGRAY)
+        y += 58
 
     branding(draw, arrow=False)
     return img
